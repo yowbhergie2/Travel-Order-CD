@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body class="bg-gray-50">
+  <?!= include('nav'); ?>
+  
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6">Update Travel Order</h2>
+      
+      <div id="loading" class="text-center py-8">
+        <p class="text-gray-500">Loading travel order...</p>
+      </div>
+      
+      <form id="updateForm" class="space-y-6 hidden">
+        <input type="hidden" id="toId">
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">TO ID</label>
+          <input type="text" id="displayToId" disabled
+            class="border border-gray-300 rounded-md p-2 w-full bg-gray-100 text-gray-600">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Date Prepared</label>
+          <input type="text" id="displayDatePrepared" disabled
+            class="border border-gray-300 rounded-md p-2 w-full bg-gray-100 text-gray-600">
+        </div>
+        
+        <div>
+          <label for="inclusiveDates" class="block text-sm font-medium text-gray-700 mb-2">Inclusive Dates *</label>
+          <input type="text" id="inclusiveDates" placeholder="Select date range" required
+            class="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <p id="inclusiveDatesError" class="text-sm text-red-500 mt-1 hidden"></p>
+        </div>
+        
+        <div>
+          <label for="destination" class="block text-sm font-medium text-gray-700 mb-2">Destination *</label>
+          <input type="text" id="destination" required
+            class="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        
+        <div>
+          <label for="purpose" class="block text-sm font-medium text-gray-700 mb-2">Purpose *</label>
+          <textarea id="purpose" rows="3" required
+            class="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        </div>
+        
+        <div>
+          <label for="requestedBy" class="block text-sm font-medium text-gray-700 mb-2">Requested By *</label>
+          <input type="text" id="requestedBy" required
+            class="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        
+        <div>
+          <label for="requestingOfficer" class="block text-sm font-medium text-gray-700 mb-2">Requesting Officer *</label>
+          <input type="text" id="requestingOfficer" required
+            class="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        
+        <div>
+          <label for="dateSubmission" class="block text-sm font-medium text-gray-700 mb-2">Date of Submission of Travel Report *</label>
+          <input type="date" id="dateSubmission" required
+            class="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <p id="dateSubmissionError" class="text-sm text-red-500 mt-1 hidden"></p>
+        </div>
+        
+        <div class="flex space-x-4">
+          <button type="submit" id="updateBtn"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-medium transition">
+            Update Travel Order
+          </button>
+          <button type="button" onclick="navigateToDashboard()"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-md font-medium transition">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    let inclusiveDatePicker;
+    let storedDatePrepared;
+    
+    function navigateToDashboard() {
+      google.script.run.showDashboard();
+    }
+    
+    function navigateToNewTo() {
+      google.script.run.showNewToForm();
+    }
+    
+    function formatDisplayDate(dateString) {
+      const date = new Date(dateString);
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+      return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    }
+    
+    function loadTravelOrder() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const toId = '<?= toId ?>';
+      
+      google.script.run.withSuccessHandler(function(order) {
+        if (!order) {
+          alert('Travel Order not found.');
+          navigateToDashboard();
+          return;
+        }
+        
+        document.getElementById('toId').value = order.toId;
+        document.getElementById('displayToId').value = order.toId;
+        document.getElementById('displayDatePrepared').value = formatDisplayDate(order.datePrepared);
+        document.getElementById('destination').value = order.destination;
+        document.getElementById('purpose').value = order.purpose;
+        document.getElementById('requestedBy').value = order.requestedBy;
+        document.getElementById('requestingOfficer').value = order.requestingOfficer;
+        document.getElementById('dateSubmission').value = order.dateSubmission;
+        
+        storedDatePrepared = order.datePrepared;
+        
+        inclusiveDatePicker = flatpickr('#inclusiveDates', {
+          mode: 'range',
+          dateFormat: 'Y-m-d',
+          defaultDate: [order.inclusiveStart, order.inclusiveEnd],
+          minDate: order.datePrepared,
+          onChange: function(selectedDates) {
+            if (selectedDates.length === 2) {
+              const endDate = new Date(selectedDates[1]);
+              const defaultSubmission = new Date(endDate);
+              defaultSubmission.setDate(defaultSubmission.getDate() + 3);
+              document.getElementById('dateSubmission').value = defaultSubmission.toISOString().split('T')[0];
+              validateDateSubmission();
+            }
+          }
+        });
+        
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('updateForm').classList.remove('hidden');
+      }).getTravelOrderById(toId);
+    }
+    
+    function validateDateSubmission() {
+      const dateSubmissionInput = document.getElementById('dateSubmission');
+      const dateSubmissionError = document.getElementById('dateSubmissionError');
+      const inclusiveDatesValue = document.getElementById('inclusiveDates').value;
+      
+      if (!inclusiveDatesValue || !dateSubmissionInput.value) return true;
+      
+      const dates = inclusiveDatesValue.split(' to ');
+      if (dates.length !== 2) return true;
+      
+      const endDate = new Date(dates[1]);
+      const submissionDate = new Date(dateSubmissionInput.value);
+      
+      if (submissionDate < endDate) {
+        dateSubmissionError.textContent = 'Submission date cannot be before End Date.';
+        dateSubmissionError.classList.remove('hidden');
+        dateSubmissionInput.classList.add('border-red-500');
+        return false;
+      }
+      
+      dateSubmissionError.classList.add('hidden');
+      dateSubmissionInput.classList.remove('border-red-500');
+      return true;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTravelOrder();
+      
+      document.getElementById('dateSubmission').addEventListener('change', validateDateSubmission);
+      
+      document.getElementById('updateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!validateDateSubmission()) {
+          alert('Please fix the validation errors.');
+          return;
+        }
+        
+        const inclusiveDatesValue = document.getElementById('inclusiveDates').value;
+        const dates = inclusiveDatesValue.split(' to ');
+        
+        if (dates.length !== 2) {
+          alert('Please select both start and end dates.');
+          return;
+        }
+        
+        const formData = {
+          toId: document.getElementById('toId').value,
+          datePrepared: storedDatePrepared,
+          inclusiveStart: new Date(dates[0]).toISOString(),
+          inclusiveEnd: new Date(dates[1]).toISOString(),
+          dateSubmission: new Date(document.getElementById('dateSubmission').value).toISOString(),
+          destination: document.getElementById('destination').value,
+          purpose: document.getElementById('purpose').value,
+          requestedBy: document.getElementById('requestedBy').value,
+          requestingOfficer: document.getElementById('requestingOfficer').value
+        };
+        
+        const updateBtn = document.getElementById('updateBtn');
+        updateBtn.disabled = true;
+        updateBtn.textContent = 'Updating...';
+        
+        google.script.run
+          .withSuccessHandler(function(result) {
+            if (result.success) {
+              alert('Travel Order updated successfully!');
+              navigateToDashboard();
+            } else {
+              alert('Error: ' + result.error);
+              updateBtn.disabled = false;
+              updateBtn.textContent = 'Update Travel Order';
+            }
+          })
+          .withFailureHandler(function(error) {
+            alert('Error: ' + error);
+            updateBtn.disabled = false;
+            updateBtn.textContent = 'Update Travel Order';
+          })
+          .updateTravelOrder(formData);
+      });
+    });
+  </script>
+</body>
+</html>
