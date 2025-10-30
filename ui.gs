@@ -1,3 +1,6 @@
+/**
+ * Shows the Dashboard view
+ */
 function showDashboard() {
   try {
     const template = HtmlService.createTemplateFromFile('dashboard');
@@ -7,14 +10,17 @@ function showDashboard() {
       .setHeight(700);
   } catch (error) {
     Logger.log('Error in showDashboard: ' + error.message);
-    const html = HtmlService.createHtmlOutput(
-      '<h2>Error Loading Dashboard</h2><p>' + error.message + '</p>' +
-      '<p>Please check that the HTML files exist and are properly formatted.</p>'
-    );
-    return html.setTitle('Error');
+    return HtmlService.createHtmlOutput(
+      '<html><body><h2>Error Loading Dashboard</h2>' +
+      '<p>' + error.message + '</p>' +
+      '<p>Please check that dashboard.html exists and is properly formatted.</p></body></html>'
+    ).setTitle('Error');
   }
 }
 
+/**
+ * Shows the New Travel Order form
+ */
 function showNewToForm() {
   try {
     const template = HtmlService.createTemplateFromFile('newTo');
@@ -24,13 +30,16 @@ function showNewToForm() {
       .setHeight(700);
   } catch (error) {
     Logger.log('Error in showNewToForm: ' + error.message);
-    const html = HtmlService.createHtmlOutput(
-      '<h2>Error Loading Form</h2><p>' + error.message + '</p>'
-    );
-    return html.setTitle('Error');
+    return HtmlService.createHtmlOutput(
+      '<html><body><h2>Error Loading Form</h2>' +
+      '<p>' + error.message + '</p></body></html>'
+    ).setTitle('Error');
   }
 }
 
+/**
+ * Shows the Update Travel Order form
+ */
 function showUpdateForm(toId) {
   try {
     const template = HtmlService.createTemplateFromFile('update');
@@ -41,18 +50,21 @@ function showUpdateForm(toId) {
       .setHeight(700);
   } catch (error) {
     Logger.log('Error in showUpdateForm: ' + error.message);
-    const html = HtmlService.createHtmlOutput(
-      '<h2>Error Loading Update Form</h2><p>' + error.message + '</p>'
-    );
-    return html.setTitle('Error');
+    return HtmlService.createHtmlOutput(
+      '<html><body><h2>Error Loading Update Form</h2>' +
+      '<p>' + error.message + '</p></body></html>'
+    ).setTitle('Error');
   }
 }
 
+/**
+ * Includes HTML files (for partials like nav.html)
+ */
 function include(filename) {
   try {
     return HtmlService.createHtmlOutputFromFile(filename).getContent();
   } catch (error) {
     Logger.log('Error in include(' + filename + '): ' + error.message);
-    return '<p>Error loading ' + filename + ': ' + error.message + '</p>';
+    return '<div style="color: red;">Error loading ' + filename + ': ' + error.message + '</div>';
   }
 }
