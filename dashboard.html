@@ -6,17 +6,17 @@
 </head>
 <body class="bg-gray-50">
   <?!= include('nav'); ?>
-  
+
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white rounded-lg shadow-md p-6">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-semibold text-gray-900">Travel Orders</h2>
       </div>
-      
+
       <div id="loading" class="text-center py-8">
         <p class="text-gray-500">Loading travel orders...</p>
       </div>
-      
+
       <div id="tableContainer" class="hidden overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -34,7 +34,7 @@
           </tbody>
         </table>
       </div>
-      
+
       <div id="emptyState" class="hidden text-center py-12">
         <p class="text-gray-500 mb-4">No travel orders found.</p>
         <button onclick="navigateToNewTo()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition">
@@ -43,59 +43,59 @@
       </div>
     </div>
   </div>
-  
+
   <script>
     function navigateToDashboard() {
       google.script.run.showDashboard();
     }
-    
+
     function navigateToNewTo() {
       google.script.run.showNewToForm();
     }
-    
+
     function formatDisplayDate(dateString) {
       const date = new Date(dateString);
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+      const months = ['January', 'February', 'March', 'April', 'May', 'June',
                       'July', 'August', 'September', 'October', 'November', 'December'];
       return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     }
-    
+
     function formatInclusiveDates(startString, endString) {
       const start = new Date(startString);
       const end = new Date(endString);
-      
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+
+      const months = ['January', 'February', 'March', 'April', 'May', 'June',
                       'July', 'August', 'September', 'October', 'November', 'December'];
-      
+
       if (start.getTime() === end.getTime()) {
         return `${months[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}`;
       }
-      
+
       if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
         return `${months[start.getMonth()]} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`;
       }
-      
+
       return `${months[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()} – ${months[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`;
     }
-    
+
     function loadOrders() {
       google.script.run.withSuccessHandler(function(orders) {
         document.getElementById('loading').classList.add('hidden');
-        
+
         if (orders.length === 0) {
           document.getElementById('emptyState').classList.remove('hidden');
           return;
         }
-        
+
         document.getElementById('tableContainer').classList.remove('hidden');
         const tbody = document.getElementById('ordersTableBody');
         tbody.innerHTML = '';
-        
+
         orders.forEach(order => {
           const row = tbody.insertRow();
-          
+
           const statusClass = order.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
-          
+
           row.innerHTML = `
             <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${order.toId}</td>
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formatDisplayDate(order.datePrepared)}</td>
@@ -109,27 +109,29 @@
             </td>
             <td class="px-4 py-3 whitespace-nowrap text-sm space-x-2">
               <button onclick="editOrder('${order.toId}')" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-              ${order.status === 'Pending' ? 
-                `<button onclick="generatePdf('${order.toId}')" class="text-violet-600 hover:text-violet-800 font-medium">Generate PDF</button>` : 
+              ${order.status === 'Pending' ?
+                `<button onclick="generatePdf('${order.toId}')" class="text-violet-600 hover:text-violet-800 font-medium">Generate PDF</button>` :
                 `<a href="${order.pdfLink}" target="_blank" class="text-green-600 hover:text-green-800 font-medium">View PDF</a>`
               }
             </td>
           `;
         });
+      }).withFailureHandler(function(error) {
+        document.getElementById('loading').innerHTML = '<p class="text-red-500">Error loading orders: ' + error + '</p>';
       }).getAllTravelOrders();
     }
-    
+
     function editOrder(toId) {
       google.script.run.showUpdateForm(toId);
     }
-    
+
     function generatePdf(toId) {
       if (!confirm('Generate PDF for this Travel Order?')) return;
-      
+
       const button = event.target;
       button.disabled = true;
       button.textContent = 'Generating...';
-      
+
       google.script.run
         .withSuccessHandler(function(result) {
           if (result.success) {
@@ -148,7 +150,7 @@
         })
         .generateTravelOrderPdf(toId);
     }
-    
+
     loadOrders();
   </script>
 </body>
