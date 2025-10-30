@@ -149,69 +149,99 @@ function updateTravelOrder(form) {
 }
 
 function getAllTravelOrders() {
-  const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
-  const data = sheet.getDataRange().getValues();
-  const orders = [];
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0]) {
-      orders.push({
-        toId: data[i][0],
-        datePrepared: data[i][1],
-        inclusiveStart: data[i][2],
-        inclusiveEnd: data[i][3],
-        destination: data[i][4],
-        purpose: data[i][5],
-        requestedBy: data[i][6],
-        requestingOfficer: data[i][7],
-        dateSubmission: data[i][8],
-        status: data[i][9],
-        pdfLink: data[i][10]
-      });
+  try {
+    const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
+    if (!sheet) {
+      Logger.log('Sheet "Travel Orders" not found');
+      return [];
     }
+
+    const data = sheet.getDataRange().getValues();
+    const orders = [];
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0]) {
+        orders.push({
+          toId: data[i][0],
+          datePrepared: data[i][1],
+          inclusiveStart: data[i][2],
+          inclusiveEnd: data[i][3],
+          destination: data[i][4],
+          purpose: data[i][5],
+          requestedBy: data[i][6],
+          requestingOfficer: data[i][7],
+          dateSubmission: data[i][8],
+          status: data[i][9],
+          pdfLink: data[i][10]
+        });
+      }
+    }
+
+    return orders;
+  } catch (error) {
+    Logger.log('Error in getAllTravelOrders: ' + error.message);
+    return [];
   }
-  
-  return orders;
 }
 
 function getTravelOrderById(toId) {
-  const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === toId) {
-      return {
-        toId: data[i][0],
-        datePrepared: data[i][1],
-        inclusiveStart: data[i][2],
-        inclusiveEnd: data[i][3],
-        destination: data[i][4],
-        purpose: data[i][5],
-        requestedBy: data[i][6],
-        requestingOfficer: data[i][7],
-        dateSubmission: data[i][8],
-        status: data[i][9],
-        pdfLink: data[i][10]
-      };
+  try {
+    const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
+    if (!sheet) {
+      Logger.log('Sheet "Travel Orders" not found');
+      return null;
     }
+
+    const data = sheet.getDataRange().getValues();
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === toId) {
+        return {
+          toId: data[i][0],
+          datePrepared: data[i][1],
+          inclusiveStart: data[i][2],
+          inclusiveEnd: data[i][3],
+          destination: data[i][4],
+          purpose: data[i][5],
+          requestedBy: data[i][6],
+          requestingOfficer: data[i][7],
+          dateSubmission: data[i][8],
+          status: data[i][9],
+          pdfLink: data[i][10]
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    Logger.log('Error in getTravelOrderById: ' + error.message);
+    return null;
   }
-  
-  return null;
 }
 
 function getLatestDatePrepared() {
-  const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
-  const data = sheet.getDataRange().getValues();
-  let latestDate = null;
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][1]) {
-      const existingDate = new Date(data[i][1]);
-      if (!latestDate || existingDate > latestDate) {
-        latestDate = existingDate;
+  try {
+    const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
+    if (!sheet) {
+      Logger.log('Sheet "Travel Orders" not found');
+      return null;
+    }
+
+    const data = sheet.getDataRange().getValues();
+    let latestDate = null;
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][1]) {
+        const existingDate = new Date(data[i][1]);
+        if (!latestDate || existingDate > latestDate) {
+          latestDate = existingDate;
+        }
       }
     }
+
+    return latestDate ? Utilities.formatDate(latestDate, 'Asia/Manila', 'yyyy-MM-dd') : null;
+  } catch (error) {
+    Logger.log('Error in getLatestDatePrepared: ' + error.message);
+    return null;
   }
-  
-  return latestDate ? Utilities.formatDate(latestDate, 'Asia/Manila', 'yyyy-MM-dd') : null;
 }
