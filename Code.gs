@@ -10,25 +10,43 @@ function onOpen() {
 }
 
 function doGet() {
-  return showDashboard();
+  try {
+    return showDashboard();
+  } catch (error) {
+    Logger.log('Error in doGet: ' + error.message);
+    const html = HtmlService.createHtmlOutput(
+      '<h2>Error</h2><p>Unable to load the application. Please check the spreadsheet configuration.</p>' +
+      '<p>Error: ' + error.message + '</p>'
+    );
+    return html.setTitle('Error');
+  }
 }
 
 function generateToId(datePrepared) {
-  const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
-  const year = Utilities.formatDate(new Date(datePrepared), 'Asia/Manila', 'yyyy');
-  const data = sheet.getDataRange().getValues();
-  
-  let maxSerial = 0;
-  for (let i = 1; i < data.length; i++) {
-    const toId = data[i][0];
-    if (toId && toId.toString().startsWith('RO2.2-' + year)) {
-      const serial = parseInt(toId.toString().split('-JO')[1]);
-      if (serial > maxSerial) maxSerial = serial;
+  try {
+    const sheet = SpreadsheetApp.openById(DB_ID).getSheetByName('Travel Orders');
+    if (!sheet) {
+      throw new Error('Sheet "Travel Orders" not found');
     }
+
+    const year = Utilities.formatDate(new Date(datePrepared), 'Asia/Manila', 'yyyy');
+    const data = sheet.getDataRange().getValues();
+
+    let maxSerial = 0;
+    for (let i = 1; i < data.length; i++) {
+      const toId = data[i][0];
+      if (toId && toId.toString().startsWith('RO2.2-' + year)) {
+        const serial = parseInt(toId.toString().split('-JO')[1]);
+        if (serial > maxSerial) maxSerial = serial;
+      }
+    }
+
+    const newSerial = (maxSerial + 1).toString().padStart(5, '0');
+    return `RO2.2-${year}-JO${newSerial}`;
+  } catch (error) {
+    Logger.log('Error in generateToId: ' + error.message);
+    throw new Error('Failed to generate Travel Order ID: ' + error.message);
   }
-  
-  const newSerial = (maxSerial + 1).toString().padStart(5, '0');
-  return `RO2.2-${year}-JO${newSerial}`;
 }
 
 function saveTravelOrder(form) {
